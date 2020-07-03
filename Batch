@@ -1,0 +1,137 @@
+@echo off
+cls
+ 
+rem ## C:\sftpplus-client-windows-x86-1.5.60\failed
+rem ## C:\sftpplus-client-windows-x86-1.5.60\inbox\cruonline
+ 
+set date=%date%
+ 
+ 
+set /a month=%date:~4,2%
+set /a day=%date:~7,2%
+set year=%date:~10,4%
+ 
+set yest_month=%month%
+set yest_year=%year%
+set /a yest_day= %day% -1
+ 
+if %day% GTR 1 goto DisplayYesterday
+set /a yest_month=%month%-1
+ 
+if %month% == 3 goto MarchSpecialCase
+if %month% == 5 goto 30DaysMonth
+if %month% == 7 goto 30DaysMonth
+if %month% == 10 goto 30DaysMonth
+if %month% == 12 goto 30DaysMonth
+ 
+set /a yest_day=31
+ 
+if %month% == 1 goto JanuarySpecialCase
+ 
+ 
+goto DisplayYesterday
+ 
+:JanuarySpecialCase
+set yest_month=12
+set /a yest_year=%year%-1
+goto DisplayYesterday
+ 
+:MarchSpecialCase
+set yest_day=28
+set /a leap="%year%%%4"
+if %leap% ==0 (
+                set yest_day=29
+                set /a "leaphndrd=%year%%%100"
+                if %leaphndrd% == 0 (
+                               set /a leapfourhndrd="%year%%%400"
+                                if %leapfourhndrd% neq 0 (
+                                                set yest_day=28
+                                                ) else (
+                                                echo special case - leap year divisible by 400
+                                                )
+                               )
+ 
+                )
+)
+goto DisplayYesterday
+ 
+:30DaysMonth
+set /a yest_day=30
+goto DisplayYesterday
+ 
+ 
+:DisplayYesterday
+set yest_day2=0
+set yest_month2=0
+ 
+if %yest_day% LSS 9 (
+                set yest_day2=0%yest_day%
+) else (
+set yest_day2=%yest_day%
+)
+if %yest_month% LSS 9 (
+                set yest_month2=0%yest_month%
+)else (
+                set yest_month2=0%yest_month%
+)
+ 
+set yesterday=%yest_day2%/%yest_month2%/%yest_year%
+ 
+ 
+rem ## Checking to see if there is a failed file in the failed folder from the night before
+ 
+if exist C:\sftpplus-client-windows-x86-1.5.60\failed\eform_cru4* goto :ErrorCRU4
+ 
+if exist C:\sftpplus-client-windows-x86-1.5.60\failed\eform_cru102* goto :ErrorCRU102
+ 
+goto :Output
+ 
+ 
+rem ## Renaming failed files and placing them in to the outbox to be polled
+ 
+ 
+:ErrorCRU4
+ 
+CD C:\sftpplus-client-windows-x86-1.5.60\failed
+ 
+RENAME eform_cru4*.xml eform_cru4_%yest_year%%yest_month2%%yest_day2%.xml
+ 
+Copy eform_cru4_%yest_year%%yest_month2%%yest_day2%.xml C:\SFTPPlus\sftpplus-client-windows-x86-1.5.60\FailedBackUp
+ 
+Move eform_cru4_%yest_year%%yest_month2%%yest_day2%.xml C:\SFTPPlus\sftpplus-client-windows-x86-1.5.60\inbox\cruonline
+ 
+Echo eform_cru4_%yest_year%%yest_month2%%yest_day2%.xml Has been resent %date:~10,4%%date:~4,2%%date:~7,2% %time:~0,2%:%time:~3,2% --------- A copy has been placed into C:\sftpplus-client-windows-x86-1.5.60\FailedBackUp >> C:\sftpplus-client-windows-x86-1.5.60\Failed_files_batch\log.txt
+ 
+ 
+ 
+:ErrorCRU102
+ 
+CD C:\sftpplus-client-windows-x86-1.5.60\failed
+ 
+RENAME eform_cru102*.xml eform_cru102_%yest_year%%yest_month2%%yest_day2%.xml
+ 
+Copy eform_cru102_%yest_year%%yest_month2%%yest_day2%.xml C:\sftpplus-client-windows-x86-1.5.60\FailedBackUp
+ 
+Move eform_cru102_%yest_year%%yest_month2%%yest_day2%.xml C:\sftpplus-client-windows-x86-1.5.60\inbox\cruonline
+ 
+Echo eform_cru102_%yest_year%%yest_month2%%yest_day2%.xml Has been resent %date:~10,4%%date:~4,2%%date:~7,2% %time:~0,2%:%time:~3,2% --------- A copy has been placed into C:\sftpplus-client-windows-x86-1.5.60\FailedBackUp >> C:\sftpplus-client-windows-x86-1.5.60\Failed_files_batch\log.txt
+ 
+ 
+ 
+rem ## Stop/Start SFTPPlus
+ 
+NET STOP "SFTPPlus Client"
+ 
+NET START "SFTPPlus Client"
+ 
+ 
+goto :EOF
+ 
+rem ## Standard output to ensure that the batch ran correctly.
+ 
+:Output
+ 
+Echo Batch ran with no failed files %date:~10,4%%date:~4,2%%date:~7,2% %time:~0,2%:%time:~3,2%..... For the batch that ran %yest_day2%/%yest_month2%/%yest_year% 11:30pm >> C:\sftpplus-client-windows-x86-1.5.60\Failed_files_batch\log.txt
+ 
+ 
+:EOF
