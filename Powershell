@@ -1,0 +1,52 @@
+##CRU-Online resend
+ 
+$Failed = "C:\sftpplus-client-windows-x86-1.5.60\failed"
+$Archive = "C:\sftpplus-client-windows-x86-1.5.60\archive"
+$Output = "C:\sftpplus-client-windows-x86-1.5.60\inbox\cruonline"
+$tmp = "C:\sftpplus-client-windows-x86-1.5.60\tmp"
+$date = (get-date).AddDays(-1)
+$date = ($date.ToString("yyyyMMdd"))
+$oldname4 = $tmp+"\eform_cru4_*.xml"
+$newname4 = $tmp+"\eform_cru4_"+$date+".xml"
+$oldname102 = $tmp+"\eform_cru102*"
+$newname102 = $tmp+"\eform_cru102_"+$date+".xml"
+$logfile = 'C:\sftpplus-client-windows-x86-1.5.60\failed\CruResendLog.txt'
+ 
+$CRU4 = Test-Path $Failed\eform_cru4*
+$CRU102 = Test-Path $Failed\eform_cru102*
+ 
+Function CRU4FUNC {
+$Failedfilename = Get-ChildItem -Name $Failed -filter "eform_cru4*.xml"
+Move-Item "$Failed\$Failedfilename" "$tmp\"
+Get-ChildItem $tmp\eform_cru4* | ForEach { Rename-Item -Path $_.FullName -NewName "eform_cru4_$date$($_.Extension)" }
+Copy-Item "$newname4" "$Archive\eform_cru4_$date.xml"
+Copy-item "$newname4" "$Output\eform_cru4_$date.xml"
+}
+ 
+If ($CRU4 -eq "True"){
+add-content $logfile "$date : CRU4 files were found in the failed folder so the copy function was ran"
+CRU4FUNC
+}
+ElseIf ($CRU4 -ne "True"){
+add-content $logfile "$date : No CRU4 files was found in the failed folder"
+}
+ 
+Function CRU102FUNC {
+$Failedfilename = Get-ChildItem -Name $Failed -filter "eform_cru102*.xml"
+Move-Item "$Failed\$Failedfilename" "$tmp\"
+Get-ChildItem $tmp\eform_cru102* | ForEach { Rename-Item -Path $_.FullName -NewName "eform_cru102_$date$($_.Extension)" }
+Copy-Item "$newname102" "$Archive\eform_cru102_$date.xml"
+Copy-item "$newname102" "$Output\eform_cru102_$date.xml"
+}
+ 
+If ($CRU102 -eq "True"){
+add-content $logfile "$date : CRU102 files were found in the failed folder so the copy function was ran"
+CRU102FUNC
+}
+ElseIf ($CRU102 -ne "True"){
+add-content $logfile "$date : No CRU102 files was found in the failed folder"
+}
+ 
+Restart-Service 'SFT Agent'
+ 
+Exit
